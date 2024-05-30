@@ -6,7 +6,6 @@ import {
     getXDCPublicAddress,
     getBCPublicAddress,
     getFIOPublicAddress,
-    getFIOPrivateAddress,
     getFIOAccount,
 } from '../../../../lib/commonjs/networks/evm/address';
 import {

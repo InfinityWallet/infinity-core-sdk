@@ -46,7 +46,9 @@ const network = {
             walletAccount: 0,
         });
         const privateAddress = (0, address_1.getPrivateAddress)({
-            privateAccountNode,
+            privateKey: (0, secp256k1_1.getPrivateKey)({
+                privateAccountNode,
+            })?.privateKey,
         });
         (0, globals_1.expect)(privateAddress).toBe('0x8a1db23fb2baa1b2f85a5c3bf5d1b70972caa3e66f537be7216d0ffdeb899d93');
     });
@@ -58,8 +60,10 @@ const network = {
             rootNode,
             walletAccount: 0,
         });
-        const privateAddress = (0, address_1.getFIOPrivateAddress)({
-            privateAccountNode,
+        const privateAddress = (0, address_1.getPrivateAddress)({
+            privateKey: (0, secp256k1_1.getPrivateKey)({
+                privateAccountNode,
+            })?.privateKey,
         });
         (0, globals_1.expect)(privateAddress).toBe('5KCYRtCo7sza6RdBRaBHD5ERvrW415iVdZ9e6KCd34jmVDfkoay');
     });

@@ -135,10 +135,9 @@ const networkLTC = {
             walletAccount: 0,
         });
         const privateAddress = (0, address_1.getPrivateAddress)({
-            change: 0,
-            index: 0,
-            privateAccountNode,
-            network: networkLTC,
+            privateKey: (0, secp256k1_1.getPrivateKey)({
+                privateAccountNode,
+            }),
         });
         (0, globals_1.expect)(privateAddress).toBe('TAy1gDZ6EfCGpdMac415snAv1DkgzGaS7uHDK2QdZcC4us6Qt4En');
     });
