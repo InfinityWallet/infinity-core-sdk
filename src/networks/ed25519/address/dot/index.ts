@@ -4,10 +4,11 @@ import { DerivationTypeNotSupported } from "../../../../errors";
 
 import { GetKeyPairParams } from "../types";
 import { derivePath } from "../../../../core/ed25519";
-import { CoinIds } from "../../../registry";
+import { CoinIds, Coins } from "../../../registry";
 import { extractPath } from "../../../../utils";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { mnemonicToMiniSecret } from "@polkadot/util-crypto";
+import config from "../../../config";
 
 /**
  * Returns the Polkadot address associated with the given public key.
@@ -87,6 +88,7 @@ export const getSecretAddressPolkadot = ({
  * @return {Uint8Array | Buffer} The private key or raw secret key.
  */
 export const getPrivateKey = ({ seed }: {seed: Buffer}) => {
-    const privateKey = mnemonicToMiniSecret(seed.toString('hex'));
+    const keySecret = derivePath(config[Coins.DOT].derivations[0].path, seed.toString('hex'));
+    const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex'));
     return `0x${Buffer.from(privateKey).toString('hex')}`;
 };

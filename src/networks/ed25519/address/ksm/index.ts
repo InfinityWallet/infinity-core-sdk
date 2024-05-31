@@ -3,10 +3,11 @@ import { DerivationTypeNotSupported } from "../../../../errors";
 import { isValidPath } from "../../../utils/secp256k1";
 import { GetKeyPairParams } from "../types";
 import { derivePath } from "../../../../core/ed25519";
-import { CoinIds } from "../../../registry";
+import { CoinIds, Coins } from "../../../registry";
 import { extractPath } from "../../../../utils";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { mnemonicToMiniSecret } from "@polkadot/util-crypto";
+import config from "../../../config";
 
 /**
  * Returns the KSM public address corresponding to the given public key.
@@ -82,7 +83,8 @@ export const getSecretAddressKusama = ({
  * @param {GetPrivateKeyParams} keyPair - The key pair object.
  * @return {Uint8Array | Buffer} The private key or raw secret key.
  */
-export const getPrivateKeyKusama = ({ seed }: {seed: Buffer}) => {
-    const privateKey = mnemonicToMiniSecret(seed.toString('hex'));
+export const getPrivateKey = ({ seed }: {seed: Buffer}) => {
+    const keySecret = derivePath(config[Coins.KSM].derivations[0].path, seed.toString('hex'));
+    const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex'));
     return `0x${Buffer.from(privateKey).toString('hex')}`;
 };
