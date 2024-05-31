@@ -3,7 +3,6 @@ import {
     CurveNotSupported,
     NetworkNotSupported,
 } from '../errors/networks';
-import networks from './networks';
 import config from './config';
 import {
     AddressResult,
@@ -98,7 +97,7 @@ export const generatePublicAddresses = ({
     index,
     derivation = DerivationName.LEGACY,
 }: GeneratePublicAddressesParams): PublicAddressResult => {
-    const network = networks[idCoin];
+    const network = config[idCoin].network;
     const coin = config[idCoin];
     if (!coin) throw new Error(CoinNotSupported);
     if (!network) throw new Error(NetworkNotSupported);

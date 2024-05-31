@@ -10,7 +10,6 @@ import {
 } from '../types';
 import { getPrivateMasterKey, getRootNode } from '../utils/secp256k1';
 
-import networks from '../networks';
 import {
     DerivationTypeNotSupported,
     InvalidAddress,
@@ -61,7 +60,7 @@ class ECDSACoin extends Base {
      * @return {BIP32Interface} The root node of the BIP32 HD tree.
      */
     getRootNode(mnemonic: string): BIP32Interface {
-        return getRootNode({ mnemonic, network: networks[this.idCoin] });
+        return getRootNode({ mnemonic, network: config[this.idCoin].network });
     }
     /**
      * Retrieves the private master key using the provided root node.

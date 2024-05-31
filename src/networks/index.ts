@@ -1,4 +1,3 @@
-export * from './networks';
 export * as evm from './evm';
 export * as utxo from './utxo';
 export * as ed25519 from './ed25519';

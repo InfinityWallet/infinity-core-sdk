@@ -24,7 +24,6 @@ import {
     getPublicAddressSegwit,
     importMaster,
 } from '../utxo';
-import networks from '../networks';
 import { NotImplemented, ProtocolNotSupported } from '../../errors';
 import { getPrivateAddress } from '../evm/address/index';
 import { isValidAddress, isValidExtendedKey } from '../utils/utxo';
@@ -33,6 +32,7 @@ import {
     generatePublicAddresses,
 } from '../generate_address';
 import Base from './base';
+import config from '../config';
 
 class SECP256K1Coin extends Base {
     curve = Curve.SECP256K1;
@@ -64,7 +64,7 @@ class SECP256K1Coin extends Base {
      */
 
     getRootNode(mnemonic: string): BIP32Interface {
-        return getRootNode({ mnemonic, network: networks[this.idCoin] });
+        return getRootNode({ mnemonic, network: config[this.idCoin].network });
     }
 
     /**
@@ -171,7 +171,7 @@ class SECP256K1Coin extends Base {
         publicAccountNode,
         protocol,
     }: getPublicAddressParams): string | undefined {
-        const network = networks[this.idCoin];
+        const network = config[this.idCoin].network;
         switch (protocol) {
             case Protocol.SEGWIT:
                 return getPublicAddressSegwit({
@@ -206,7 +206,7 @@ class SECP256K1Coin extends Base {
      */
 
     isValidAddress(address: string): boolean {
-        return isValidAddress(address, networks[this.idCoin] as Network);
+        return isValidAddress(address, config[this.idCoin].network as Network);
     }
     /**
      * Validates the given extended key address by checking it against the network configuration.
@@ -215,7 +215,10 @@ class SECP256K1Coin extends Base {
      * @return {boolean} Returns true if the extended key address is valid, false otherwise.
      */
     isValidExtendedKey(address: string): boolean {
-        return isValidExtendedKey(address, networks[this.idCoin] as Network);
+        return isValidExtendedKey(
+            address,
+            config[this.idCoin].network as Network,
+        );
     }
     /**
      * Generates addresses based on the provided mnemonic.
@@ -243,7 +246,7 @@ class SECP256K1Coin extends Base {
     importMaster(privateMasterAddress: string): BIP32Interface {
         return importMaster(
             privateMasterAddress,
-            networks[this.idCoin] as Network,
+            config[this.idCoin].network as Network,
         );
     }
     /**
