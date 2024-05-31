@@ -2,14 +2,10 @@ import { DerivationTypeNotSupported, NotImplemented } from '../../errors';
 import {
     getKeyPair,
     getPublicKey,
-    getPublicSolanaAddress,
-    getPublicStellarAddress,
-    getPublicTezosAddress,
-    getPublicXRPAddress,
+
     getSecretAddress,
     getSecretKey,
     getSeed,
-    getTezosPublicKeyHash,
 } from '../ed25519';
 import { Coins, Curve } from '../registry';
 import {
@@ -27,7 +23,16 @@ import { isValidAddress as isValidAddressStellar } from '../utils/stellar';
 import { isValidAddress as isValidAddressXRP } from '../utils/xrp';
 import { isValidAddress as isValidAddressSolana } from '../utils/solana';
 import { isValidAddress as isValidAddressTezos } from '../utils/tezos';
+import { isValidAddress as isValidAddressDOT } from '../utils/dot';
+import { isValidAddress as isValidAddressKSM } from '../utils/ksm';
+
 import { generateAddresses } from '../generate_address';
+import { getPublicStellarAddress } from '../ed25519/address/stellar';
+import { getPublicXRPAddress } from '../ed25519/address/xrp';
+import { getPublicSolanaAddress } from '../ed25519/address/solana';
+import { getPublicTezosAddress, getTezosPublicKeyHash } from '../ed25519/address/tezos';
+import { getPublicKSMAddress } from '../ed25519/address/ksm';
+import { getPublicPolkadotAddress } from '../ed25519/address/dot';
 
 class ED25519Coin extends Base {
     curve = Curve.ED25519;
@@ -92,6 +97,14 @@ class ED25519Coin extends Base {
                 return getPublicTezosAddress({
                     publicKey,
                 });
+            case DerivationName.KSM:
+                return getPublicKSMAddress({
+                    publicKey,
+                });
+            case DerivationName.DOT:
+                return getPublicPolkadotAddress({
+                    publicKey,
+                });
             default:
                 throw new Error(DerivationTypeNotSupported);
         }
@@ -114,6 +127,10 @@ class ED25519Coin extends Base {
                 return isValidAddressSolana(address);
             case DerivationName.TEZOS:
                 return isValidAddressTezos(address);
+            case DerivationName.KSM:
+                return isValidAddressKSM(address);
+            case DerivationName.DOT:
+                return isValidAddressDOT(address);
             default:
                 throw new Error(DerivationTypeNotSupported);
         }

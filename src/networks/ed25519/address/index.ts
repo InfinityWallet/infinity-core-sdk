@@ -1,15 +1,12 @@
 import nacl from 'tweetnacl';
 import { mnemonicToSeedSync, validateMnemonic } from '../../../core/bip39';
 import { derivePath } from '../../../core/ed25519';
-import { Keyring } from '@polkadot/keyring';
-import { encodeAddress } from '@polkadot/util-crypto';
-import { deriveAddress } from 'ripple-keypairs';
+
 import {
     CoinNotSupported,
     DerivationTypeNotSupported,
     DerivePathError,
     InvalidMnemonic,
-    InvalidPublicKey,
     InvalidSeed,
 } from '../../../errors/networks';
 import {
@@ -18,23 +15,23 @@ import {
     PublicKeyEd25519Params,
     RootNodeParams,
 } from '../../types';
-import { b58cencode, base58 } from '../../../core/base/base58';
-import { StrKey } from '../../../core/ed25519/strkey';
 import { extractPath } from '../../../utils';
-import { fromSeed } from '../../../core/bip32';
-import { blake2b } from '@noble/hashes/blake2b';
 import { Keypair } from 'stellar-sdk';
-import { Prefix, prefix } from '../../utils/tezos';
 import {
     GetKeyPairParams,
     GetPrivateKeyParams,
     GetPublicKeyParams,
-    GetTezosPublicKeyParams,
 } from './types';
 import { isValidPath } from '../../utils/secp256k1';
 import { SupportedNetworks } from '../general';
-import { DerivationName } from '../../constants';
 import { CoinIds, Protocol } from '../../registry';
+import { getKeyPairKusama, getPublicKSMAddress, getPublicKeyKusama, getSecretAddressKusama } from './ksm';
+import { getKeyPairPolkadot, getPublicKeyPolkadot, getPublicPolkadotAddress, getSecretAddressPolkadot } from './dot';
+import { getKeyPairTezos, getPublicKeyTezos, getPublicTezosAddress, getSecretAddressTezos, getTezosPublicKeyHash } from './tezos';
+import { getKeyPairSolana, getPublicKeySolana, getPublicSolanaAddress, getSecretAddressSolana } from './solana';
+import { getKeyPairXRP, getPublicKeyXRP, getPublicXRPAddress, getSecretAddressXRP } from './xrp';
+import { getKeyPairStellar, getPublicKeyStellar, getPublicStellarAddress, getSecretAddressStellar } from './stellar';
+import { mnemonicToMiniSecret } from '@polkadot/util-crypto';
 
 /**
  * Retrieves the seed from the given mnemonic.
@@ -47,58 +44,11 @@ export const getSeed = ({ mnemonic }: RootNodeParams): Buffer => {
     return mnemonicToSeedSync(mnemonic);
 };
 
-/**
- * Returns the Stellar public address corresponding to the given public key.
- *
- * @param {Object} params - The parameters for generating the Stellar public address.
- * @param {Buffer} params.publicKey - The public key for which the address is generated.
- * @throws {Error} Throws an error if the public key is not a Buffer.
- * @return {string} The Stellar public address corresponding to the public key.
- */
-export const getPublicStellarAddress = ({
-    publicKey,
-}: {
-    publicKey: Buffer;
-}): string => {
-    if (!Buffer.isBuffer(publicKey)) throw new Error(InvalidPublicKey);
-    return StrKey.encodeEd25519PublicKey(publicKey);
-};
 
-/**
- * Returns the Solana public address corresponding to the given public key.
- *
- * @param {Buffer} publicKey - The public key for which the address is generated.
- * @return {string} The Solana public address.
- */
-export const getPublicSolanaAddress = ({
-    publicKey,
-}: {
-    publicKey: Buffer;
-}): string => {
-    const bytes = new Uint8Array(
-        publicKey.buffer,
-        publicKey.byteOffset,
-        publicKey.byteLength,
-    );
-    return base58.encode(bytes);
-};
 
-/**
- * Retrieves the XRP address corresponding to the given public key.
- *
- * @param {Object} params - The parameters for generating the XRP address.
- * @param {Buffer} params.publicKey - The public key for which the address is generated.
- * @throws {Error} Throws an error if the public key is not a Buffer.
- * @return {string} The XRP address corresponding to the public key.
- */
-export const getPublicXRPAddress = ({
-    publicKey,
-}: {
-    publicKey: Buffer;
-}): string => {
-    if (!Buffer.isBuffer(publicKey)) throw new Error(InvalidPublicKey);
-    return deriveAddress(publicKey.toString('hex').toUpperCase());
-};
+
+
+
 
 /**
  * Retrieves the secret key based on the provided seed and path.
@@ -119,13 +69,18 @@ export const getSecretKey = ({
     if (!isValidPath(path)) throw new Error(DerivePathError);
     if (!Buffer.isBuffer(seed)) throw new Error(InvalidSeed);
     const keySecret = derivePath(path, seed.toString('hex'));
-    if (path.includes("/148'/")) {
+    const coin = extractPath(path)[1].number;
+    if (coin == CoinIds.STELLAR) {
         const keyPairSecret = Keypair.fromRawEd25519Seed(keySecret.key);
         return Buffer.concat([
             keyPairSecret.rawSecretKey(),
             keyPairSecret.rawPublicKey(),
         ]);
     }
+    else if(coin == CoinIds.KSM || coin == CoinIds.DOT){
+        return mnemonicToMiniSecret(seed.toString('hex'));
+    }
+
     const keyPair = nacl.sign.keyPair.fromSeed(keySecret.key);
     return keyPair.secretKey;
 };
@@ -149,16 +104,14 @@ export const getSecretAddress = ({
 }): string => {
     if (SupportedNetworks.find(a => a == bipIdCoin) == undefined)
         throw new Error(CoinNotSupported);
-    if (bipIdCoin == CoinIds.XRP) {
-        return '00' + secretKey.toString('hex').toUpperCase();
-    } else if (bipIdCoin == CoinIds.STELLAR) {
-        return StrKey.encodeEd25519SecretSeed(secretKey);
-    } else if (bipIdCoin == CoinIds.TEZOS) {
-        return b58cencode(secretKey, prefix[Prefix.EDSK]);
-    } else if (bipIdCoin == CoinIds.DOT || bipIdCoin == CoinIds.KSM) {
-        return '0x' + secretKey.toString('hex');
-    } else {
-        return base58.encode(secretKey);
+    switch(bipIdCoin){
+        case CoinIds.XRP: return getSecretAddressXRP({ secretKey });
+        case CoinIds.KSM: return getSecretAddressKusama({ secretKey });
+        case CoinIds.STELLAR: return getSecretAddressStellar({ secretKey });
+        case CoinIds.SOLANA: return getSecretAddressSolana({ secretKey });
+        case CoinIds.DOT: return getSecretAddressPolkadot({ secretKey });
+        case CoinIds.TEZOS: return getSecretAddressTezos({ secretKey });
+        default: throw new Error(DerivationTypeNotSupported);
     }
 };
 
@@ -182,26 +135,14 @@ export const getKeyPair = ({
     const coin = extractPath(path)[1].number;
     if (SupportedNetworks.find(a => a == coin) == undefined)
         throw new Error(CoinNotSupported);
-    if (coin == CoinIds.XRP) {
-        const m = fromSeed(seed);
-        return m.derivePath(path);
-    } else if (coin == CoinIds.DOT || coin == CoinIds.KSM) {
-        const keySecret = derivePath(path, seed.toString('hex'));
-        let keyring: Keyring;
-        if (coin == CoinIds.DOT) {
-            keyring = new Keyring({ ss58Format: 0 });
-        } else if (coin == CoinIds.KSM) {
-            keyring = new Keyring({ ss58Format: 2 });
-        } else {
-            throw new Error(CoinNotSupported);
-        }
-
-        return keyring.addFromSeed(keySecret.key);
-    } else {
-        const keySecret = derivePath(path, seed.toString('hex'));
-        if (coin == CoinIds.STELLAR)
-            return Keypair.fromRawEd25519Seed(keySecret.key);
-        else return nacl.sign.keyPair.fromSeed(keySecret.key);
+    switch(coin){
+        case CoinIds.XRP: return getKeyPairXRP({ path, seed, walletAccount });
+        case CoinIds.STELLAR: return getKeyPairStellar({ path, seed, walletAccount });
+        case CoinIds.TEZOS: return getKeyPairTezos({ path, seed, walletAccount });
+        case CoinIds.DOT: return getKeyPairPolkadot({ path, seed, walletAccount });
+        case CoinIds.KSM: return getKeyPairKusama({ path, seed, walletAccount });
+        case CoinIds.SOLANA: return getKeyPairSolana({ path, seed, walletAccount });
+        default: throw new Error(DerivationTypeNotSupported);
     }
 };
 
@@ -219,12 +160,15 @@ export const getKeyPair = ({
 export const getPublicKey = ({ keyPair, bipIdCoin }: GetPublicKeyParams) => {
     if (SupportedNetworks.find(a => a == bipIdCoin) == undefined)
         throw new Error(CoinNotSupported);
-    if (bipIdCoin == CoinIds.TEZOS) {
-        return blake2b(keyPair.publicKey, { dkLen: 20 });
-    } else if (bipIdCoin == CoinIds.STELLAR) return keyPair.rawPublicKey();
-    else if (bipIdCoin == CoinIds.DOT || bipIdCoin == CoinIds.KSM)
-        return keyPair.addressRaw;
-    return keyPair.publicKey;
+    switch(bipIdCoin){
+        case CoinIds.XRP: return getPublicKeyXRP({ keyPair });
+        case CoinIds.STELLAR: return getPublicKeyStellar({ keyPair });
+        case CoinIds.TEZOS: return getPublicKeyTezos({ keyPair });
+        case CoinIds.DOT: return getPublicKeyPolkadot({ keyPair });
+        case CoinIds.KSM: return getPublicKeyKusama({ keyPair });
+        case CoinIds.SOLANA: return getPublicKeySolana({ keyPair });
+        default: throw new Error(DerivationTypeNotSupported);
+    }
 };
 
 /**
@@ -233,50 +177,37 @@ export const getPublicKey = ({ keyPair, bipIdCoin }: GetPublicKeyParams) => {
  * @param {GetPrivateKeyParams} keyPair - The key pair object.
  * @return {Uint8Array | Buffer} The private key or raw secret key.
  */
-export const getPrivateKey = ({ keyPair }: GetPrivateKeyParams) => {
+export const getPrivateKey = ({ keyPair,bipIdCoin }: GetPrivateKeyParams) => {
+    if(bipIdCoin == CoinIds.XRP){
+        return keyPair?.privateKey
+    }
+    else if(bipIdCoin == CoinIds.STELLAR)
+    {
+        return keyPair.rawSecretKey();
+    }
     return keyPair?.secretKey ?? keyPair?.privateKey ?? keyPair.rawSecretKey();
 };
 
-/**
- * Returns the base58-encoded Tezos public key hash of the given key pair.
- *
- * @param {GetTezosPublicKeyParams} params - An object containing the key pair.
- * @param {Keypair} params.keyPair - The key pair to generate the public key hash from.
- * @return {string} The base58-encoded Tezos public key hash.
- */
-export const getTezosPublicKeyHash = ({ keyPair }: GetTezosPublicKeyParams) => {
-    return b58cencode(keyPair.publicKey, prefix[Prefix.EDPK]);
-};
 
-/**
- * Returns the Tezos public address corresponding to the given public key.
- *
- * @param {object} params - The parameters for generating the public address.
- * @param {Uint8Array} params.publicKey - The public key for which the address is generated.
- * @return {string} The Tezos public address.
- */
-export const getPublicTezosAddress = ({
-    publicKey,
-}: {
-    publicKey: Uint8Array;
-}): string => {
-    return b58cencode(publicKey, prefix[Prefix.TZ1]);
-};
+export const getPublicAddress = ({ publicKey, bipIdCoin }: { publicKey:any,bipIdCoin:CoinIds}) => {
+    if (SupportedNetworks.find(a => a == bipIdCoin) == undefined)
+        throw new Error(CoinNotSupported);
+    switch(bipIdCoin){
+        case CoinIds.XRP: return  getPublicXRPAddress({ publicKey });
+        case CoinIds.STELLAR: return getPublicStellarAddress({ publicKey });
+        case CoinIds.TEZOS: return getPublicTezosAddress({ publicKey });
+        case CoinIds.DOT: return getPublicPolkadotAddress({ publicKey });
+        case CoinIds.KSM: return getPublicKSMAddress({ publicKey });
+        case CoinIds.SOLANA: return getPublicSolanaAddress({ publicKey });
+        default: throw new Error(DerivationTypeNotSupported);
+    }
+}
 
-export const getPublicPolkadotAddress = ({
-    publicKey,
-}: {
-    publicKey: Uint8Array;
-}): string => {
-    return encodeAddress(publicKey, 0);
-};
-export const getPublicKSMAddress = ({
-    publicKey,
-}: {
-    publicKey: Uint8Array;
-}): string => {
-    return encodeAddress(publicKey, 2);
-};
+
+
+
+
+
 /**
  * Generates addresses based on derivation and mnemonic.
  *
@@ -307,47 +238,17 @@ export const generateAddresses = ({
     newAddress.derivationName = derivation.name;
 
     newAddress.publicKey = getPublicKey({ keyPair, bipIdCoin: path[1].number });
-    newAddress.privateKey = getPrivateKey({ keyPair });
+    newAddress.privateKey = getPrivateKey({ keyPair, bipIdCoin: path[1].number });
     newAddress.privateAddress = getSecretAddress({
         secretKey: newAddress.privateKey,
         bipIdCoin: path[1].number,
     });
-    switch (derivation.name) {
-        case DerivationName.STELLAR:
-            newAddress.publicAddress = getPublicStellarAddress({
-                publicKey: newAddress.publicKey,
-            });
-            break;
-        case DerivationName.XRP:
-            newAddress.publicAddress = getPublicXRPAddress({
-                publicKey: newAddress.publicKey,
-            });
-            break;
-        case DerivationName.SOLANA:
-            newAddress.publicAddress = getPublicSolanaAddress({
-                publicKey: newAddress.publicKey,
-            });
-            break;
-        case DerivationName.TEZOS:
-            newAddress.publicAddress = getPublicTezosAddress({
-                publicKey: newAddress.publicKey,
-            });
-            newAddress.publicKeyHash = getTezosPublicKeyHash({
-                keyPair,
-            });
-            break;
-        case DerivationName.DOT:
-            newAddress.publicAddress = getPublicPolkadotAddress({
-                publicKey: newAddress.publicKey,
-            });
-            break;
-        case DerivationName.KSM:
-            newAddress.publicAddress = getPublicKSMAddress({
-                publicKey: newAddress.publicKey,
-            });
-            break;
-        default:
-            throw new Error(DerivationTypeNotSupported);
+    newAddress.publicAddress = getPublicAddress({
+        publicKey: newAddress.publicKey,
+        bipIdCoin: path[1].number
+    });
+    if(path[1].number == CoinIds.TEZOS){
+        newAddress.account = getTezosPublicKeyHash({ keyPair })
     }
     return newAddress;
 };

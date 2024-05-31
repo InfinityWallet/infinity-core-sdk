@@ -13,6 +13,5 @@ export type GetPublicKeyParams = {
 
 export type GetPrivateKeyParams = {
     keyPair: any;
+    bipIdCoin: CoinIds;
 };
-
-export type GetTezosPublicKeyParams = GetPrivateKeyParams;
