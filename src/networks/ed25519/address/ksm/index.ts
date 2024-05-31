@@ -83,7 +83,7 @@ export const getSecretAddressKusama = ({
  * @param {GetPrivateKeyParams} keyPair - The key pair object.
  * @return {Uint8Array | Buffer} The private key or raw secret key.
  */
-export const getPrivateKey = ({ seed }: {seed: Buffer}) => {
+export const getPrivateKeyKusama = ({ seed }: {seed: Buffer}) => {
     const keySecret = derivePath(config[Coins.KSM].derivations[0].path, seed.toString('hex'));
     const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex'));
     return `0x${Buffer.from(privateKey).toString('hex')}`;

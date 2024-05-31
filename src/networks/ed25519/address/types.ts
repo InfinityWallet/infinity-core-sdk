@@ -12,6 +12,6 @@ export type GetPublicKeyParams = {
 };
 
 export type GetPrivateKeyParams = {
-    keyPair: any;
+    seed: Buffer;
     bipIdCoin: CoinIds;
 };

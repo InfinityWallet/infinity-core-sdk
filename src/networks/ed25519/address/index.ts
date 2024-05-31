@@ -177,7 +177,7 @@ export const getPublicKey = ({ keyPair, bipIdCoin }: GetPublicKeyParams) => {
  * @param {GetPrivateKeyParams} keyPair - The key pair object.
  * @return {Uint8Array | Buffer} The private key or raw secret key.
  */
-export const getPrivateKey = ({ keyPair,bipIdCoin }: GetPrivateKeyParams) => {
+export const getPrivateKey = ({ seed,bipIdCoin }: GetPrivateKeyParams) => {
     if(bipIdCoin == CoinIds.XRP){
         return keyPair?.privateKey
     }
@@ -238,7 +238,7 @@ export const generateAddresses = ({
     newAddress.derivationName = derivation.name;
 
     newAddress.publicKey = getPublicKey({ keyPair, bipIdCoin: path[1].number });
-    newAddress.privateKey = getPrivateKey({ keyPair, bipIdCoin: path[1].number });
+    newAddress.privateKey = getPrivateKey({ seed, bipIdCoin: path[1].number });
     newAddress.privateAddress = getSecretAddress({
         secretKey: newAddress.privateKey,
         bipIdCoin: path[1].number,

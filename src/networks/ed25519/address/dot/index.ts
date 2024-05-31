@@ -87,7 +87,7 @@ export const getSecretAddressPolkadot = ({
  * @param {GetPrivateKeyParams} keyPair - The key pair object.
  * @return {Uint8Array | Buffer} The private key or raw secret key.
  */
-export const getPrivateKey = ({ seed }: {seed: Buffer}) => {
+export const getPrivateKeyPolkadot = ({ seed }: {seed: Buffer}) => {
     const keySecret = derivePath(config[Coins.DOT].derivations[0].path, seed.toString('hex'));
     const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex'));
     return `0x${Buffer.from(privateKey).toString('hex')}`;
