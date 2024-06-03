@@ -96,6 +96,7 @@
     "long": "^5.2.3",
     "protobufjs": "^7.2.6",
     "randombytes": "^2.1.0",
+    "rimraf": "^5.0.7",
     "ripple-keypairs": "^2.0.0",
     "secp256k1": "^5.0.0",
     "stellar-base": "8.2.2",

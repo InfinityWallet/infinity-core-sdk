@@ -46,7 +46,14 @@ export const getKeyPairPolkadot = ({
     if(coin != CoinIds.DOT) throw new Error(DerivationTypeNotSupported);
     const keySecret = derivePath(path, seed.toString('hex'));
     let keyring: Keyring = new Keyring({ ss58Format: 0 });
-    return keyring.addFromSeed(keySecret.key);
+    const keyPair = keyring.addFromSeed(keySecret.key)
+    const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex')) as Buffer;
+    return {
+        keyPair,
+        publicKey:keyPair.addressRaw,
+        publicAddress:keyPair.address,
+        privateKey:privateKey
+    }
 };
 
 
@@ -58,7 +65,7 @@ export const getKeyPairPolkadot = ({
  * @return {Buffer | Uint8Array} The extracted public key.
  */
 export const getPublicKeyPolkadot = ({ keyPair }: {keyPair:KeyringPair})  => {
-    return keyPair.addressRaw;
+    return keyPair.publicKey;
 };
 
 
@@ -75,9 +82,9 @@ export const getPublicKeyPolkadot = ({ keyPair }: {keyPair:KeyringPair})  => {
 export const getSecretAddressPolkadot = ({
     secretKey,
 }: {
-    secretKey: Buffer;
+    secretKey: any;
 }): string => {
-    return '0x' + secretKey.toString('hex');
+    return '0x' + secretKey.privateKey.toString('hex');
 };
 
 
