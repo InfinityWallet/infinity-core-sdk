@@ -2,7 +2,6 @@ import { DerivationTypeNotSupported, NotImplemented } from '../../errors';
 import {
     getKeyPair,
     getPublicKey,
-
     getSecretAddress,
     getSecretKey,
     getSeed,
@@ -30,7 +29,10 @@ import { generateAddresses } from '../generate_address';
 import { getPublicStellarAddress } from '../ed25519/address/stellar';
 import { getPublicXRPAddress } from '../ed25519/address/xrp';
 import { getPublicSolanaAddress } from '../ed25519/address/solana';
-import { getPublicTezosAddress, getTezosPublicKeyHash } from '../ed25519/address/tezos';
+import {
+    getPublicTezosAddress,
+    getTezosPublicKeyHash,
+} from '../ed25519/address/tezos';
 import { getPublicKSMAddress } from '../ed25519/address/ksm';
 import { getPublicPolkadotAddress } from '../ed25519/address/dot';
 
@@ -156,8 +158,8 @@ class ED25519Coin extends Base {
      * @param {string} params.mnemonic - The mnemonic to generate the seed from.
      * @return {Buffer} The generated seed.
      */
-    getSeed({ mnemonic }: GetSeedParams) {
-        return getSeed({ mnemonic });
+    getSeed({ mnemonic, walletAccount, derivation }: GetSeedParams) {
+        return getSeed({ mnemonic, walletAccount, derivation });
     }
     /**
      * Retrieves a key pair using the given seed.
@@ -166,9 +168,11 @@ class ED25519Coin extends Base {
      * @param {string} params.seed - The seed used to generate the key pair.
      * @return {Promise<KeyPair>} A promise that resolves to the generated key pair.
      */
-    getKeyPair({ seed, walletAccount }: GetKeyPairParams) {
-        const path = config[this.idCoin].derivations[0].path + '';
-        return getKeyPair({ path, seed, walletAccount });
+    getKeyPair({ seed, walletAccount, derivationName }: GetKeyPairParams) {
+        const path =
+            config[this.idCoin].derivations.find(a => a.name == derivationName)
+                ?.path + '';
+        return getKeyPair({ path, seed, walletAccount, derivationName });
     }
     /**
      * Retrieves the secret key based on the provided seed.

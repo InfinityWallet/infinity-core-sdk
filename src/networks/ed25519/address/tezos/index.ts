@@ -1,13 +1,16 @@
 import nacl from 'tweetnacl';
 import { b58cencode } from '../../../../core/base/base58';
 import { derivePath } from '../../../../core/ed25519';
-import { CoinNotSupported, DerivationTypeNotSupported } from '../../../../errors';
+import {
+    CoinNotSupported,
+    DerivationTypeNotSupported,
+} from '../../../../errors';
 import { extractPath } from '../../../../utils';
 import { CoinIds } from '../../../registry';
 import { isValidPath } from '../../../utils/secp256k1';
 import { Prefix, prefix } from '../../../utils/tezos';
 import { SupportedNetworks } from '../../general';
-import { GetKeyPairParams, GetPrivateKeyParams } from '../types';
+import { GetKeyPairParams } from '../types';
 import { blake2b } from '@noble/hashes/blake2b';
 
 /**
@@ -32,10 +35,9 @@ export const getPublicTezosAddress = ({
  * @param {Keypair} params.keyPair - The key pair to generate the public key hash from.
  * @return {string} The base58-encoded Tezos public key hash.
  */
-export const getTezosPublicKeyHash = ({ keyPair }: { keyPair: any}) => {
+export const getTezosPublicKeyHash = ({ keyPair }: { keyPair: any }) => {
     return b58cencode(keyPair.publicKey, prefix[Prefix.EDPK]);
 };
-
 
 /**
  * Generates a key pair based on the provided path and seed.
@@ -55,7 +57,7 @@ export const getKeyPairTezos = ({
     path = path.replace('ACCOUNT', walletAccount + '');
     if (!isValidPath(path)) throw new Error(DerivationTypeNotSupported);
     const coin = extractPath(path)[1].number;
-    if(coin != CoinIds.TEZOS) throw new Error(DerivationTypeNotSupported);
+    if (coin != CoinIds.TEZOS) throw new Error(DerivationTypeNotSupported);
     if (SupportedNetworks.find(a => a == coin) == undefined)
         throw new Error(CoinNotSupported);
     const keySecret = derivePath(path, seed.toString('hex'));
@@ -69,10 +71,9 @@ export const getKeyPairTezos = ({
  * @throws {Error} Throws an error if the coin ID is not supported.
  * @return {Buffer | Uint8Array} The extracted public key.
  */
-export const getPublicKeyTezos = ({ keyPair }: {keyPair:any})  => {
+export const getPublicKeyTezos = ({ keyPair }: { keyPair: any }) => {
     return blake2b(keyPair.publicKey, { dkLen: 20 });
 };
-
 
 /**
  * Returns the secret address for a given secret key and coin ID.

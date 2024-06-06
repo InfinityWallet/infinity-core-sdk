@@ -12,7 +12,9 @@ export enum DerivationName {
     STELLAR = 'stellar',
     TEZOS = 'tezos',
     DOT = 'dot',
+    DOT_STANDARD = 'dot_standard',
     KSM = 'ksm',
+    KSM_STANDARD = 'ksm_standard',
 }
 export enum Encoding {
     XPUB = 'xpub',

@@ -7,10 +7,15 @@ const globals_1 = require("@jest/globals");
 const ed25519_1 = require("../../../../lib/commonjs/networks/ed25519");
 const config_1 = __importDefault(require("../../../../lib/commonjs/networks/config"));
 const registry_1 = require("../../../../lib/commonjs/networks/registry");
+const constants_1 = require("../../../../lib/commonjs/networks/constants");
 const mnemonic = 'derive lab over dragon nothing pioneer until deputy inherit help next release';
 (0, globals_1.describe)('signMessageED25519', () => {
     (0, globals_1.test)('signMessageStellar', async () => {
-        const seed = (0, ed25519_1.getSeed)({ mnemonic });
+        const seed = (0, ed25519_1.getSeed)({
+            mnemonic,
+            walletAccount: 0,
+            derivation: constants_1.DerivationName.STELLAR,
+        });
         const secretKey = (0, ed25519_1.getSecretKey)({
             path: config_1.default[registry_1.Coins.TEZOS].derivations[0].path,
             seed,
@@ -23,7 +28,11 @@ const mnemonic = 'derive lab over dragon nothing pioneer until deputy inherit he
         (0, globals_1.expect)(Buffer.from(signedMessage).toString('hex')).toBe('4823529380a27dc72cb687eb2487bc5f05f9e90f6ee578185b4e50a67c30e663ee54d1917c19995406b77bbe7a9f90d6f61605acca3a1d94f7a466555c626809');
     });
     (0, globals_1.test)('signMessageSolana', async () => {
-        const seed = (0, ed25519_1.getSeed)({ mnemonic });
+        const seed = (0, ed25519_1.getSeed)({
+            mnemonic,
+            walletAccount: 0,
+            derivation: constants_1.DerivationName.SOLANA,
+        });
         const secretKey = (0, ed25519_1.getSecretKey)({
             path: config_1.default[registry_1.Coins.SOLANA].derivations[0].path,
             seed,

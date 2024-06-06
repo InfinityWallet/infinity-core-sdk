@@ -1,13 +1,17 @@
 import nacl from 'tweetnacl';
 import { base58 } from '../../../../core/base/base58';
 import { derivePath } from '../../../../core/ed25519';
-import { CoinNotSupported, DerivationTypeNotSupported } from '../../../../errors';
+import {
+    CoinNotSupported,
+    DerivationTypeNotSupported,
+} from '../../../../errors';
 import { extractPath } from '../../../../utils';
 import { isValidPath } from '../../../utils/secp256k1';
 import { SupportedNetworks } from '../../general';
 import { GetKeyPairParams } from '../types';
 import { CoinIds, Coins } from '../../../registry';
 import config from '../../../config';
+import { DerivationName } from '../../../constants';
 
 /**
  * Returns the Solana public address corresponding to the given public key.
@@ -46,13 +50,12 @@ export const getKeyPairSolana = ({
     path = path.replace('ACCOUNT', walletAccount + '');
     if (!isValidPath(path)) throw new Error(DerivationTypeNotSupported);
     const coin = extractPath(path)[1].number;
-    if(coin != CoinIds.SOLANA) throw new Error(DerivationTypeNotSupported);
+    if (coin != CoinIds.SOLANA) throw new Error(DerivationTypeNotSupported);
     if (SupportedNetworks.find(a => a == coin) == undefined)
         throw new Error(CoinNotSupported);
     const keySecret = derivePath(path, seed.toString('hex'));
     return nacl.sign.keyPair.fromSeed(keySecret.key);
 };
-
 
 /**
  * Returns the public key from the given key pair. If the coin ID is not supported, an error is thrown.
@@ -61,10 +64,9 @@ export const getKeyPairSolana = ({
  * @throws {Error} Throws an error if the coin ID is not supported.
  * @return {Buffer | Uint8Array} The extracted public key.
  */
-export const getPublicKeySolana = ({ keyPair }: {keyPair:any})  => {
+export const getPublicKeySolana = ({ keyPair }: { keyPair: any }) => {
     return keyPair.publicKey;
 };
-
 
 /**
  * Returns the secret address for a given secret key and coin ID.
@@ -89,7 +91,18 @@ export const getSecretAddressSolana = ({
  * @param {GetPrivateKeyParams} keyPair - The key pair object.
  * @return {Uint8Array | Buffer} The private key or raw secret key.
  */
-export const getPrivateKeyKusama = ({ seed,walletAccount }: {seed: Buffer,walletAccount:number}) => {
-    const keyPair = getKeyPairSolana({ seed, path: config[Coins.SOLANA].derivations[0].path, walletAccount });
+export const getPrivateKeyKusama = ({
+    seed,
+    walletAccount,
+}: {
+    seed: Buffer;
+    walletAccount: number;
+}) => {
+    const keyPair = getKeyPairSolana({
+        seed,
+        path: config[Coins.SOLANA].derivations[0].path,
+        walletAccount,
+        derivationName: DerivationName.SOLANA,
+    });
     return keyPair.secretKey;
 };

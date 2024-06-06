@@ -640,6 +640,11 @@ const config: Record<Coins, Derivation> = {
                 path: "m/44'/354'/ACCOUNT'/0'/0'",
                 protocol: Protocol.LEGACY,
             },
+            {
+                name: DerivationName.DOT_STANDARD,
+                path: '//ACCOUNT',
+                protocol: Protocol.LEGACY,
+            },
         ],
         bip44: CoinIds.DOT,
         curve: Curve.ED25519,
@@ -662,6 +667,11 @@ const config: Record<Coins, Derivation> = {
             {
                 name: DerivationName.KSM,
                 path: "m/44'/434'/ACCOUNT'/0'/0'",
+                protocol: Protocol.LEGACY,
+            },
+            {
+                name: DerivationName.KSM_STANDARD,
+                path: '//ACCOUNT',
                 protocol: Protocol.LEGACY,
             },
         ],

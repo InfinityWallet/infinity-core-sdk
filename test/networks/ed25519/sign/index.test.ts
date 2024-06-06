@@ -6,13 +6,18 @@ import {
 } from '../../../../lib/commonjs/networks/ed25519';
 import config from '../../../../lib/commonjs/networks/config';
 import { Coins } from '../../../../lib/commonjs/networks/registry';
+import { DerivationName } from '../../../../lib/commonjs/networks/constants';
 
 const mnemonic =
     'derive lab over dragon nothing pioneer until deputy inherit help next release';
 
 describe('signMessageED25519', () => {
     test('signMessageStellar', async () => {
-        const seed = getSeed({ mnemonic });
+        const seed = getSeed({
+            mnemonic,
+            walletAccount: 0,
+            derivation: DerivationName.STELLAR,
+        });
         const secretKey = getSecretKey({
             path: config[Coins.TEZOS].derivations[0].path,
             seed,
@@ -27,7 +32,11 @@ describe('signMessageED25519', () => {
         );
     });
     test('signMessageSolana', async () => {
-        const seed = getSeed({ mnemonic });
+        const seed = getSeed({
+            mnemonic,
+            walletAccount: 0,
+            derivation: DerivationName.SOLANA,
+        });
         const secretKey = getSecretKey({
             path: config[Coins.SOLANA].derivations[0].path,
             seed,

@@ -1,11 +1,15 @@
-import { deriveAddress } from "ripple-keypairs";
-import { CoinNotSupported, DerivationTypeNotSupported, InvalidPublicKey } from "../../../../errors";
-import { SupportedNetworks } from "../../general";
-import { CoinIds } from "../../../registry";
-import { extractPath } from "../../../../utils";
-import { isValidPath } from "../../../utils/secp256k1";
-import { fromSeed } from "../../../../core/bip32";
-import { GetKeyPairParams } from "../types";
+import { deriveAddress } from 'ripple-keypairs';
+import {
+    CoinNotSupported,
+    DerivationTypeNotSupported,
+    InvalidPublicKey,
+} from '../../../../errors';
+import { SupportedNetworks } from '../../general';
+import { CoinIds } from '../../../registry';
+import { extractPath } from '../../../../utils';
+import { isValidPath } from '../../../utils/secp256k1';
+import { fromSeed } from '../../../../core/bip32';
+import { GetKeyPairParams } from '../types';
 
 /**
  * Retrieves the XRP address corresponding to the given public key.
@@ -42,7 +46,7 @@ export const getKeyPairXRP = ({
     path = path.replace('ACCOUNT', walletAccount + '');
     if (!isValidPath(path)) throw new Error(DerivationTypeNotSupported);
     const coin = extractPath(path)[1].number;
-    if(coin != CoinIds.XRP) throw new Error(DerivationTypeNotSupported);
+    if (coin != CoinIds.XRP) throw new Error(DerivationTypeNotSupported);
     if (SupportedNetworks.find(a => a == coin) == undefined)
         throw new Error(CoinNotSupported);
     const m = fromSeed(seed);
@@ -56,7 +60,7 @@ export const getKeyPairXRP = ({
  * @throws {Error} Throws an error if the coin ID is not supported.
  * @return {Buffer | Uint8Array} The extracted public key.
  */
-export const getPublicKeyXRP = ({ keyPair }: {keyPair:any}) => {
+export const getPublicKeyXRP = ({ keyPair }: { keyPair: any }) => {
     return keyPair.publicKey;
 };
 

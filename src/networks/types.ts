@@ -51,6 +51,8 @@ export type PublicAddressResult = {
 export type RootNodeParams = {
     mnemonic: string;
     network?: Network;
+    walletAccount?: number;
+    derivation?: DerivationParams;
 };
 export type MasterKeyParams = {
     rootNode: BIP32Interface;
@@ -134,6 +136,8 @@ export type getPrivateMasterKeyParams = {
 };
 export type GetSeedParams = {
     mnemonic: string;
+    walletAccount: number;
+    derivation: DerivationName;
 };
 export type getAccountParams = {
     keyPair: Keypair;
@@ -141,6 +145,7 @@ export type getAccountParams = {
 export type GetKeyPairParams = {
     seed: Buffer;
     walletAccount: number;
+    derivationName: DerivationName;
 };
 export type getPublicMasterKeyParams = getPrivateMasterKeyParams;
 export type getPublicMasterAddressParams = {

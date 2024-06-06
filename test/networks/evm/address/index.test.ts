@@ -7,6 +7,7 @@ import {
     getBCPublicAddress,
     getFIOPublicAddress,
     getFIOAccount,
+    getFIOPrivateAddress,
 } from '../../../../lib/commonjs/networks/evm/address';
 import {
     getPrivateKey,
@@ -79,7 +80,7 @@ describe('generateAddressEVM', () => {
             rootNode,
             walletAccount: 0,
         });
-        const privateAddress = getPrivateAddress({
+        const privateAddress = getFIOPrivateAddress({
             privateKey: getPrivateKey({
                 privateAccountNode,
             })?.privateKey as Buffer,

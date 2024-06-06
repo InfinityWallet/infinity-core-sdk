@@ -60,7 +60,7 @@ const network = {
             rootNode,
             walletAccount: 0,
         });
-        const privateAddress = (0, address_1.getPrivateAddress)({
+        const privateAddress = (0, address_1.getFIOPrivateAddress)({
             privateKey: (0, secp256k1_1.getPrivateKey)({
                 privateAccountNode,
             })?.privateKey,

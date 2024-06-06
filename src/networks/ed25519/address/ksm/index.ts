@@ -1,13 +1,14 @@
-import Keyring, { encodeAddress } from "@polkadot/keyring";
-import { DerivationTypeNotSupported } from "../../../../errors";
-import { isValidPath } from "../../../utils/secp256k1";
-import { GetKeyPairParams } from "../types";
-import { derivePath } from "../../../../core/ed25519";
-import { CoinIds, Coins } from "../../../registry";
-import { extractPath } from "../../../../utils";
-import { KeyringPair } from "@polkadot/keyring/types";
-import { mnemonicToMiniSecret } from "@polkadot/util-crypto";
-import config from "../../../config";
+import Keyring, { encodeAddress } from '@polkadot/keyring';
+import { DerivationTypeNotSupported } from '../../../../errors';
+import { isValidPath } from '../../../utils/secp256k1';
+import { GetKeyPairCoinParams } from '../types';
+import { CoinIds } from '../../../registry';
+import { extractPath } from '../../../../utils';
+import { KeyringPair } from '@polkadot/keyring/types';
+import { mnemonicToMiniSecret } from '@polkadot/util-crypto';
+import { GetKeyPairKSMParams, KSMKeyPair } from './types';
+import { derivePath } from '../../../../core/ed25519';
+import { DerivationName } from '../../../constants';
 
 /**
  * Returns the KSM public address corresponding to the given public key.
@@ -38,14 +39,71 @@ export const getKeyPairKusama = ({
     path,
     seed,
     walletAccount,
-}: GetKeyPairParams): any => {
+    derivationName,
+}: GetKeyPairKSMParams): KSMKeyPair => {
+    if (derivationName == DerivationName.KSM) {
+        return getKeyPairKSMEd25591({
+            path,
+            seed,
+            walletAccount,
+        });
+    } else {
+        return getKeyPairKSMSr25591({
+            path,
+            seed,
+            walletAccount,
+        });
+    }
+};
+/**
+ * Generates a key pair based on the provided path and seed.
+ *
+ * @param {GetKeyPairCoinParams} params - An object containing the path and seed.
+ * @param {string} params.path - The derivation path.
+ * @param {Buffer} params.seed - The seed.
+ * @param {number} params.walletAccount - The wallet account ID.
+ * @throws {Error} Throws an error if the path is not valid or the coin is not supported.
+ * @return {any} Returns the generated key pair.
+ */
+export const getKeyPairKSMEd25591 = ({
+    path,
+    seed,
+    walletAccount,
+}: GetKeyPairCoinParams): KSMKeyPair => {
     path = path.replace('ACCOUNT', walletAccount + '');
     if (!isValidPath(path)) throw new Error(DerivationTypeNotSupported);
     const coin = extractPath(path)[1].number;
-    if(coin != CoinIds.KSM) throw new Error(DerivationTypeNotSupported);
+    if (coin != CoinIds.KSM) throw new Error(DerivationTypeNotSupported);
     const keySecret = derivePath(path, seed.toString('hex'));
-    let keyring: Keyring = new Keyring({ ss58Format: 2 });
-    return keyring.addFromSeed(keySecret.key);
+    let keyring: Keyring = new Keyring({ ss58Format: 0 });
+    const keyPair = keyring.addFromSeed(keySecret.key);
+    const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex'));
+    return {
+        keyPair,
+        privateKey,
+    };
+};
+
+/**
+ * Generates a key pair based on the provided path and seed.
+ *
+ * @param {GetKeyPairCoinParams} params - An object containing the path and seed.
+ * @param {Buffer} params.seed - The seed.
+ * @throws {Error} Throws an error if the path is not valid or the coin is not supported.
+ * @return {any} Returns the generated key pair.
+ */
+export const getKeyPairKSMSr25591 = ({
+    seed,
+    walletAccount
+}: GetKeyPairCoinParams): KSMKeyPair => {
+    let keyring: Keyring = new Keyring({ type: 'sr25519', ss58Format: 2 });
+    const keyPair = keyring.createFromUri(
+        u8aToHex(seed) + '//' + walletAccount,
+    );
+    return {
+        keyPair,
+        privateKey: seed,
+    };
 };
 
 /**
@@ -55,10 +113,9 @@ export const getKeyPairKusama = ({
  * @throws {Error} Throws an error if the coin ID is not supported.
  * @return {Buffer | Uint8Array} The extracted public key.
  */
-export const getPublicKeyKusama = ({ keyPair }: {keyPair:KeyringPair})  => {
+export const getPublicKeyKusama = ({ keyPair }: { keyPair: KeyringPair }) => {
     return keyPair.addressRaw;
 };
-
 
 /**
  * Returns the secret address for a given secret key and coin ID.
@@ -72,7 +129,7 @@ export const getPublicKeyKusama = ({ keyPair }: {keyPair:KeyringPair})  => {
 export const getSecretAddressKusama = ({
     secretKey,
 }: {
-    secretKey: Buffer;
+    secretKey: any;
 }): string => {
     return '0x' + secretKey.toString('hex');
 };
@@ -83,8 +140,10 @@ export const getSecretAddressKusama = ({
  * @param {GetPrivateKeyParams} keyPair - The key pair object.
  * @return {Uint8Array | Buffer} The private key or raw secret key.
  */
-export const getPrivateKeyKusama = ({ seed }: {seed: Buffer}) => {
-    const keySecret = derivePath(config[Coins.KSM].derivations[0].path, seed.toString('hex'));
-    const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex'));
-    return `0x${Buffer.from(privateKey).toString('hex')}`;
+export const getPrivateKeyPolkadot = ({ keyPair }: { keyPair: KSMKeyPair }) => {
+    return `0x${Buffer.from(keyPair.privateKey).toString('hex')}`;
 };
+function u8aToHex(seed: Buffer) {
+    throw new Error('Function not implemented.');
+}
+

@@ -1,14 +1,15 @@
-import Keyring, { encodeAddress } from "@polkadot/keyring";
-import { isValidPath } from "../../../utils/secp256k1";
-import { DerivationTypeNotSupported } from "../../../../errors";
-
-import { GetKeyPairParams } from "../types";
-import { derivePath } from "../../../../core/ed25519";
-import { CoinIds, Coins } from "../../../registry";
-import { extractPath } from "../../../../utils";
-import { KeyringPair } from "@polkadot/keyring/types";
-import { mnemonicToMiniSecret } from "@polkadot/util-crypto";
-import config from "../../../config";
+import Keyring, { encodeAddress } from '@polkadot/keyring';
+import { isValidPath } from '../../../utils/secp256k1';
+import { DerivationTypeNotSupported } from '../../../../errors';
+import { u8aToHex } from '@polkadot/util';
+import { GetKeyPairCoinParams } from '../types';
+import { CoinIds } from '../../../registry';
+import { extractPath } from '../../../../utils';
+import { KeyringPair } from '@polkadot/keyring/types';
+import { mnemonicToMiniSecret } from '@polkadot/util-crypto';
+import { DotKeyPair, GetKeyPairPolkadotParams } from './types';
+import { derivePath } from '../../../../core/ed25519';
+import { DerivationName } from '../../../constants';
 
 /**
  * Returns the Polkadot address associated with the given public key.
@@ -24,7 +25,6 @@ export const getPublicPolkadotAddress = ({
 }): string => {
     return encodeAddress(publicKey, 0);
 };
-
 /**
  * Generates a key pair based on the provided path and seed.
  *
@@ -39,23 +39,74 @@ export const getKeyPairPolkadot = ({
     path,
     seed,
     walletAccount,
-}: GetKeyPairParams): any => {
+    derivationName,
+}: GetKeyPairPolkadotParams): DotKeyPair => {
+    if (derivationName == DerivationName.DOT) {
+        return getKeyPairPolkadotEd25591({
+            path,
+            seed,
+            walletAccount,
+        });
+    } else {
+        return getKeyPairPolkadotSr25591({
+            path,
+            seed,
+            walletAccount,
+        });
+    }
+};
+/**
+ * Generates a key pair based on the provided path and seed.
+ *
+ * @param {GetKeyPairCoinParams} params - An object containing the path and seed.
+ * @param {string} params.path - The derivation path.
+ * @param {Buffer} params.seed - The seed.
+ * @param {number} params.walletAccount - The wallet account ID.
+ * @throws {Error} Throws an error if the path is not valid or the coin is not supported.
+ * @return {any} Returns the generated key pair.
+ */
+export const getKeyPairPolkadotEd25591 = ({
+    path,
+    seed,
+    walletAccount,
+}: GetKeyPairCoinParams): DotKeyPair => {
     path = path.replace('ACCOUNT', walletAccount + '');
     if (!isValidPath(path)) throw new Error(DerivationTypeNotSupported);
     const coin = extractPath(path)[1].number;
-    if(coin != CoinIds.DOT) throw new Error(DerivationTypeNotSupported);
+    if (coin != CoinIds.DOT) throw new Error(DerivationTypeNotSupported);
     const keySecret = derivePath(path, seed.toString('hex'));
     let keyring: Keyring = new Keyring({ ss58Format: 0 });
-    const keyPair = keyring.addFromSeed(keySecret.key)
-    const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex')) as Buffer;
+    const keyPair = keyring.addFromSeed(keySecret.key);
+    const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex'));
     return {
         keyPair,
-        publicKey:keyPair.addressRaw,
-        publicAddress:keyPair.address,
-        privateKey:privateKey
-    }
+        privateKey,
+    };
 };
 
+/**
+ * Generates a key pair based on the provided path and seed.
+ *
+ * @param {GetKeyPairParams} params - An object containing the path and seed.
+ * @param {string} params.path - The derivation path.
+ * @param {Buffer} params.seed - The seed.
+ * @param {number} params.walletAccount - The wallet account ID.
+ * @throws {Error} Throws an error if the path is not valid or the coin is not supported.
+ * @return {any} Returns the generated key pair.
+ */
+export const getKeyPairPolkadotSr25591 = ({
+    seed,
+    walletAccount,
+}: GetKeyPairCoinParams): DotKeyPair => {
+    let keyring: Keyring = new Keyring({ type: 'sr25519', ss58Format: 0 });
+    const keyPair = keyring.createFromUri(
+        u8aToHex(seed) + '//' + walletAccount,
+    );
+    return {
+        keyPair,
+        privateKey: seed,
+    };
+};
 
 /**
  * Returns the public key from the given key pair. If the coin ID is not supported, an error is thrown.
@@ -64,11 +115,9 @@ export const getKeyPairPolkadot = ({
  * @throws {Error} Throws an error if the coin ID is not supported.
  * @return {Buffer | Uint8Array} The extracted public key.
  */
-export const getPublicKeyPolkadot = ({ keyPair }: {keyPair:KeyringPair})  => {
-    return keyPair.publicKey;
+export const getPublicKeyPolkadot = ({ keyPair }: { keyPair: KeyringPair }) => {
+    return keyPair.addressRaw;
 };
-
-
 
 /**
  * Returns the secret address for a given secret key and coin ID.
@@ -84,9 +133,8 @@ export const getSecretAddressPolkadot = ({
 }: {
     secretKey: any;
 }): string => {
-    return '0x' + secretKey.privateKey.toString('hex');
+    return '0x' + secretKey.toString('hex');
 };
-
 
 /**
  * Returns the private key from the key pair if available, otherwise returns the raw secret key.
@@ -94,8 +142,6 @@ export const getSecretAddressPolkadot = ({
  * @param {GetPrivateKeyParams} keyPair - The key pair object.
  * @return {Uint8Array | Buffer} The private key or raw secret key.
  */
-export const getPrivateKeyPolkadot = ({ seed }: {seed: Buffer}) => {
-    const keySecret = derivePath(config[Coins.DOT].derivations[0].path, seed.toString('hex'));
-    const privateKey = mnemonicToMiniSecret(keySecret.key.toString('hex'));
-    return `0x${Buffer.from(privateKey).toString('hex')}`;
+export const getPrivateKeyPolkadot = ({ keyPair }: { keyPair: DotKeyPair }) => {
+    return `0x${Buffer.from(keyPair.privateKey).toString('hex')}`;
 };
